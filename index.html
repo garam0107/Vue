@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>현재 작성된 할일 목록 수 : {{todos.length}}</h1>
+<!-- 
+    <h2>현재 완료된 할일 목록 수 : {{completedTodosCount()}}</h2> -->
+    <h2>현재 완료된 할일 목록 수 : {{computedTodosCount}}</h2>
+    <!-- 메서드가 처음에 호출되고나서부터는 다시 호출되지 않음 -->
+    <!-- <h2>{{computedTodosCount}}</h2>
+    <h2>{{computedTodosCount}}</h2>
+    <h2>{{computedTodosCount}}</h2> -->
+
+    <article id="todo-list" v-if = "isLogin">
+      <!-- 요소 반복 -->
+      <div class="card" v-for="todo in todos" :key="todo.id" :class="{done: todo.completed}" @click="goDetail(todo)">
+        <p>{{todo.title}}</p>
+        <p>{{todo.completed}}</p>
+      </div>
+    </article>
+    <!-- model창 만들기 -->
+    <!-- v-if는 특정 조건 만족 안하면 렌더링 자체를 안함 -->
+    <!-- 즉 렌더링 단계에서부터 결정되는 과정이기에 우선수위가 젤 높음 -->
+    <section v-show="todo" class="detail" >
+      <button @click="todo=false">X</button>
+      <h1>{{todo.id}} | {{todo.title}}</h1>
+      <p>{{todo.completed}}</p>
+
+        <ul>
+          <li v-for = "comment in detailComputedComments" :key ="comment.id">
+           <p>
+             {{comment.id}} | {{comment.body}}
+           </p> 
+          </li>
+        </ul>
+    </section>
+
+
+
+
+    <article 
+    id="login-form"
+    v-if = "!isLogin"
+    >
+    <form @submit.prevent = "login">
+      <!-- label의 textContent도 중요하지만.. for,id가 더 중요하다. -->
+      <!-- 사용자 입력 정보를 v-model을 사용해서 양방향 바인딩 -->
+      <label for="username">username:</label>
+      <input type="text" id ="username" v-model = "username">
+      <label for="password">password:</label>
+      <input type="password" id ="password" v-model = "password">
+      <input type="submit" value="LOGIN">
+
+    </form>
+    </article>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const { createApp, ref, onMounted, computed, watch} = Vue
+    const app = createApp({
+      setup() {
+        // todo 목록 더미 데이터
+        const todo = ref(false)
+        const todos = ref([
+          // {
+          //   id: 1,
+          //   title: 'first title',
+          //   completed: false
+          // },
+          // {
+          //   id: 2,
+          //   title: 'second title',
+          //   completed: true
+          // }
+        ])
+
+        const goDetail = function(item) {
+          todo.value = item
+        }
+        const comments = ref([])
+
+        const detailComputedComments = computed(() => {
+          return comments.value.filter(comment => comment.postId === todo.value.id)
+        })
+
+
+        
+        // JS함수는 호출방식에 따라 this가 달라짐
+        onMounted(() => {
+          axios({
+            method: 'get',
+            url: 'https://jsonplaceholder.typicode.com/todos',
+          })
+            .then(res => {
+              todos.value = res.data.slice(0, 10)
+            })
+            .catch(err => console.log(err))
+          axios({
+              method: 'get',
+              url: 'https://jsonplaceholder.typicode.com/comments',
+            })
+            .then(res => {
+              comments.value = res.data
+            })
+            .catch(err => console.log(err))
+        })
+        // watch (todo, (newTodo) =>{
+        //   console.log(newTodo)
+        // })
+        const completedTodosCount = function () {
+          const result = todos.value.filter(function (todo) {
+            return todo.completed === true
+          })
+          console.log('method is called') // 2번 호출됨
+          return result.length
+        }
+        // computed가 호출되는 경우는 종속 대상 데이터의 변동사항이 발생했을 때
+        const computedTodosCount = computed(() => {
+          // console.log('메서드 호출')
+          return todos.value.filter(todo => todo.completed).length
+        })
+        
+        const isLogin = ref(false)
+        const username = ref('')
+        const password = ref('')
+        const login = () =>{
+          // username이 공백이 아니고, password가 공백이 아닐 때만 허용
+          // 빈 문자열인지 확인하는 js 메서드 trim()
+          if (username.value.trim() && password.value.trim()){
+            if(username.value.length > 12) {
+              alert('글자 수를 초과하였습니다.')
+              return 
+            }
+            isLogin.value = true
+            return
+          }else{
+            alert('아이디와 비밀번호를 입력해주세요.')
+          }
+        }
+        return {
+          todos,todo,computedTodosCount,comments,detailComputedComments,isLogin,username,password,
+          goDetail,completedTodosCount,login,
+        }
+      }
+    })
+    app.mount('#app')
+  </script>
+</body>
+</html>

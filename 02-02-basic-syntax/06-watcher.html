@@ -20,18 +20,36 @@
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script>
-    const { createApp, ref } = Vue
+    const { createApp, ref, watch} = Vue
 
     const app = createApp({
       setup() {
         const count = ref(0)
         const message = ref('')
         const messageLength = ref(0)
+        const myObj = ref({
+          name : 'garam'
+        })
+        
+        watch(count , (newCount, oldCount) => {
+          console.log(`변화하는 값 : ${newCount}`)
+          console.log(`기존 값 : ${oldCount}`)
+
+        })
+        watch(message, (newMessage) => {
+          messageLength.value = newMessage.length
+        })
+        watch (myObj, (newObj) => {
+          console.log
+        },
+        {deep:true}
+      )
+        
 
         return {
           count,
           message,
-          messageLength
+          messageLength,
         }
       }
     })
